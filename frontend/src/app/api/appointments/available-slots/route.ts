@@ -1,80 +1,144 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/utils/supabase-admin';
 
+// Standart mesai sabitleri
+const DEFAULT_START_H = 10;
+const DEFAULT_START_M = 0;
+const DEFAULT_END_H = 20;
+const DEFAULT_END_M = 30;
+
+// Otomatik mola saatleri (sadece hafta içi)
+const OTO_MOLALAR = ['10:00', '11:30', '12:30', '14:30', '16:30', '18:30'];
+
+/** Dakika cinsinden saat hesapla */
+function toMinutes(h: number, m: number) {
+  return h * 60 + m;
+}
+
+/**
+ * Belirtilen mesai aralığında 30 dakikalık slot listesi üretir.
+ * Gece mesaisi desteği: bitiş saati başlangıçtan küçükse ertesi güne sarıyor
+ * demektir — bunu da "toplam dakika" mantığıyla çözüyoruz.
+ */
+function generateSlots(startH: number, startM: number, endH: number, endM: number): string[] {
+  const slots: string[] = [];
+  let current = toMinutes(startH, startM);
+  // Bitiş toplam dakikası (gece mesaisinde 30 saat gibi davranır)
+  let end = toMinutes(endH, endM);
+
+  // Gece mesaisi: end < start → end'i +24 saat olarak kabul et
+  if (end <= current) {
+    end += 24 * 60;
+  }
+
+  // Son slot END'e eşit olmamalı (son randevu END'e 30 dk önce alınabilir mantığı)
+  // Aslında "son randevuyu saat 20:30'da alabilmeli" demek: slot 20:30 dahil
+  // Dolayısıyla current <= end olduğu sürece ekle
+  while (current <= end) {
+    const h = Math.floor(current / 60) % 24;
+    const m = current % 60;
+    slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+    current += 30;
+  }
+
+  return slots;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const dateStr = searchParams.get('date');
-  
+  const staffIdParam = searchParams.get('staff_id');
+
   if (!dateStr) {
-    return NextResponse.json({ error: "Date parameter is required" }, { status: 400 });
+    return NextResponse.json({ error: 'Date parameter is required' }, { status: 400 });
   }
 
-  // Tarihi güvenli bir şekilde oluşturup gününü buluyoruz (0: Pazar, 1-5: Hafta içi)
   const [year, month, day] = dateStr.split('-').map(Number);
   const dateObj = new Date(year, month - 1, day);
-  const dayOfWeek = dateObj.getDay();
-  
+  const dayOfWeek = dateObj.getDay(); // 0=Pazar
   const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
-  const otoMolalar = ['10:00', '11:30', '12:30', '14:30', '16:30', '18:30'];
-  
-  // 10:00 to 20:00, 30 min intervals
-  const slots: string[] = [];
-  let currentHour = 10;
-  let currentMin = 0;
-  
-  while (currentHour <= 20) {
-    if (currentHour === 20 && currentMin === 30) break;
+  const isSunday = dayOfWeek === 0;
 
-    const hh = String(currentHour).padStart(2, '0');
-    const mm = String(currentMin).padStart(2, '0');
-    
-    slots.push(`${hh}:${mm}`);
-    
-    currentMin += 30;
-    if (currentMin >= 60) {
-      currentMin -= 60;
-      currentHour += 1;
-    }
+  // ── 1. Custom schedule kontrolü ────────────────────────────
+  const { data: scheduleData } = await supabase
+    .from('custom_schedules')
+    .select('*')
+    .eq('date', dateStr)
+    .maybeSingle();
+
+  const customSchedule = scheduleData ?? null;
+
+  // Tüm gün kapalıysa boş döndür
+  if (customSchedule?.is_closed) {
+    return NextResponse.json({ available_slots: [], is_closed: true });
   }
-  
-  // Sadece dolu olanları değil, patronun açtığı 'unblocked' istisnaları da çekiyoruz
-  const { data: dbAppointments, error } = await supabase
+
+  // Pazar + custom schedule yoksa kapalı
+  if (isSunday && !customSchedule) {
+    return NextResponse.json({ available_slots: [], is_closed: true });
+  }
+
+  // Mesai saatlerini belirle
+  let startH = customSchedule?.start_time
+    ? parseInt(customSchedule.start_time.split(':')[0])
+    : DEFAULT_START_H;
+  let startM = customSchedule?.start_time
+    ? parseInt(customSchedule.start_time.split(':')[1])
+    : DEFAULT_START_M;
+  let endH = customSchedule?.end_time
+    ? parseInt(customSchedule.end_time.split(':')[0])
+    : DEFAULT_END_H;
+  let endM = customSchedule?.end_time
+    ? parseInt(customSchedule.end_time.split(':')[1])
+    : DEFAULT_END_M;
+
+  const slots = generateSlots(startH, startM, endH, endM);
+
+  // ── 2. Veritabanından randevuları çek ──────────────────────
+  let dbQuery = supabase
     .from('appointments')
-    .select('time, status')
+    .select('time, status, staff_id')
     .eq('date', dateStr)
     .in('status', ['pending', 'confirmed', 'unblocked']);
-    
+
+  // Eğer staff_id belirtildiyse o personele ait randevuları filtrele
+  // (mola/unblock gibi sistem kayıtları da dahil)
+  const { data: dbAppointments, error } = await dbQuery;
+
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
-  // Gerçekten dolu veya manuel kapatılmış saatler
-  const bookedTimes = dbAppointments
-    .filter(appt => appt.status === 'pending' || appt.status === 'confirmed')
-    .map(appt => appt.time.substring(0, 5));
 
-  // Patronun otomatik molayı kırmak için manuel "Geri Aç"tığı saatler
-  const unblockedTimes = dbAppointments
-    .filter(appt => appt.status === 'unblocked')
-    .map(appt => appt.time.substring(0, 5));
-  
-  // Sihirli Filtreleme İşlemi
-  const availableSlots = slots.filter(slot => {
-    // 1. Veritabanında normal randevu veya manuel mola (confirmed/pending) varsa KAPALI
+  // staffId verilmişse sadece o personelin veya personelsiz (sistem) kayıtlarını say
+  const staffId = staffIdParam ? parseInt(staffIdParam) : null;
+
+  // Gerçekten dolu saatler (o personele ait veya personel ayrımsız sistem kayıtları)
+  const bookedTimes = (dbAppointments ?? [])
+    .filter((appt: any) => {
+      if (appt.status !== 'pending' && appt.status !== 'confirmed') return false;
+      // Eğer müşteri personel seçtiyse: sadece aynı personel doluysa engelle
+      if (staffId) return !appt.staff_id || appt.staff_id === staffId;
+      // Personel seçmediyse: herhangi bir randevu varsa dolu say
+      return true;
+    })
+    .map((appt: any) => appt.time.substring(0, 5));
+
+  const unblockedTimes = (dbAppointments ?? [])
+    .filter((appt: any) => appt.status === 'unblocked')
+    .map((appt: any) => appt.time.substring(0, 5));
+
+  // ── 3. Filtreleme ──────────────────────────────────────────
+  const availableSlots = slots.filter((slot: string) => {
+    // Gerçek randevu veya manuel mola varsa kapalı
     if (bookedTimes.includes(slot)) return false;
 
-    // 2. Hafta içi otomatik mola saatine denk geliyorsa
-    if (isWeekday && otoMolalar.includes(slot)) {
-      // Eğer patron bu saati "Geri Aç" (unblocked) yapmadıysa KAPALI
-      if (!unblockedTimes.includes(slot)) {
-        return false; 
-      }
-      // Geri açtıysa müsait kalmaya devam eder
+    // Hafta içi otomatik mola (sadece custom schedule yoksa)
+    if (!customSchedule && isWeekday && OTO_MOLALAR.includes(slot)) {
+      if (!unblockedTimes.includes(slot)) return false;
     }
 
-    // 3. Hiçbir engele takılmayanlar AÇIK olarak kalır
     return true;
   });
-  
-  return NextResponse.json({ available_slots: availableSlots });
+
+  return NextResponse.json({ available_slots: availableSlots, is_closed: false });
 }
