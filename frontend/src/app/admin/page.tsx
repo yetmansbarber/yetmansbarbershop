@@ -242,6 +242,18 @@ export default function AdminPage() {
             Belirli günler için çalışma saatlerini özelleştirin, tatil günleri ekleyin.
           </p>
         </Link>
+
+        <Link
+          href="/admin/hizmetler"
+          className="block p-6 bg-[#0a0a0a] border border-gray-800 hover:border-yellow-500/50 rounded-sm transition-all group"
+        >
+          <h3 className="text-lg font-bold text-white mb-2 group-hover:text-yellow-500 transition-colors">
+            💈 Hizmet Yönetimi
+          </h3>
+          <p className="text-sm text-gray-500">
+            Hizmet isimlerini ve fiyatlarını güncelleyin, yeni hizmet ekleyin veya kaldırın.
+          </p>
+        </Link>
       </div>
 
       {/* Bekleyen İstekler Modal */}
