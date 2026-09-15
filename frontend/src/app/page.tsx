@@ -53,7 +53,7 @@ export default async function Home() {
              </div>
               <div className="relative h-[400px]">
                 <Image 
-                  src="/gallery/1.jpeg" 
+                  src={`${process.env.NEXT_PUBLIC_SUPABASE_URL || ''}/storage/v1/object/public/gallery/about-barber.jpeg`} 
                   alt="Barber Details" 
                   fill 
                   unoptimized

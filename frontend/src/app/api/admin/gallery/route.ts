@@ -1,23 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/utils/supabase-admin';
-import fs from 'fs';
-import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
-const LOCAL_MEDIA_FILES = [
-  { file: 'video.mp4', title: 'Tanıtım Videosu', mime: 'video/mp4' },
-  { file: '1.jpeg', title: 'Klasik Kesim', mime: 'image/jpeg' },
-  { file: '2.jpeg', title: 'Sakal Tıraşı', mime: 'image/jpeg' },
-  { file: '3.jpeg', title: 'Modern Fade Kesim', mime: 'image/jpeg' },
-  { file: '4.jpeg', title: 'Stil & Bakım', mime: 'image/jpeg' },
-  { file: '5.jpeg', title: 'Detay Kesim', mime: 'image/jpeg' },
-];
-
-// GET — Tüm galeri kayıtlarını getir (Boşsa yerel dosyaları Storage'a yükleyip DB'ye ekle)
-export async function GET(req: NextRequest) {
+// GET — Tüm galeri kayıtlarını getir
+export async function GET() {
   try {
-    let { data, error } = await supabase
+    const { data, error } = await supabase
       .from('gallery_images')
       .select('*')
       .order('created_at', { ascending: false });
@@ -26,87 +15,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Eğer veritabanı henüz tamamen boşsa, yerel dosyaları Storage'a yükle ve DB'ye kaydet
-    if (!data || data.length === 0) {
-      const galleryDir = path.join(process.cwd(), 'public', 'gallery');
-      const origin = req.nextUrl.origin;
-
-      for (const item of LOCAL_MEDIA_FILES) {
-        let buffer: Buffer | null = null;
-        const filePath = path.join(galleryDir, item.file);
-
-        if (fs.existsSync(filePath)) {
-          buffer = fs.readFileSync(filePath);
-        } else {
-          // Vercel serverless ortamında dosya sistemi yerine HTTP üzerinden statik dosyayı çek
-          try {
-            const res = await fetch(`${origin}/gallery/${item.file}`);
-            if (res.ok) {
-              const arrayBuffer = await res.arrayBuffer();
-              buffer = Buffer.from(arrayBuffer);
-            }
-          } catch (fetchErr) {
-            console.error(`Dosya çekilemedi (${item.file}):`, fetchErr);
-          }
-        }
-
-        if (buffer) {
-          const storageFileName = `migrated_${item.file}`;
-
-          // Storage'a yükle
-          await supabase.storage
-            .from('gallery')
-            .upload(storageFileName, buffer, {
-              contentType: item.mime,
-              upsert: true,
-            });
-
-          // Public URL al
-          const { data: { publicUrl } } = supabase.storage
-            .from('gallery')
-            .getPublicUrl(storageFileName);
-
-          // Veritabanına yaz
-          await supabase.from('gallery_images').insert({
-            title: item.title,
-            image_url: publicUrl,
-          });
-        }
-      }
-
-      // Ana sayfa için 1.jpeg'i bağımsız olarak 'about-barber.jpeg' adıyla Storage'a yedekle
-      let aboutBuffer: Buffer | null = null;
-      const aboutFilePath = path.join(galleryDir, '1.jpeg');
-      if (fs.existsSync(aboutFilePath)) {
-        aboutBuffer = fs.readFileSync(aboutFilePath);
-      } else {
-        try {
-          const res = await fetch(`${origin}/gallery/1.jpeg`);
-          if (res.ok) {
-            const arrayBuffer = await res.arrayBuffer();
-            aboutBuffer = Buffer.from(arrayBuffer);
-          }
-        } catch {}
-      }
-
-      if (aboutBuffer) {
-        await supabase.storage
-          .from('gallery')
-          .upload('about-barber.jpeg', aboutBuffer, {
-            contentType: 'image/jpeg',
-            upsert: true,
-          });
-      }
-
-      // Güncellenmiş listeyi yeniden çek
-      const refetch = await supabase
-        .from('gallery_images')
-        .select('*')
-        .order('created_at', { ascending: false });
-      data = refetch.data || [];
-    }
-
-    return NextResponse.json(data);
+    return NextResponse.json(data || []);
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Hata oluştu' }, { status: 500 });
   }

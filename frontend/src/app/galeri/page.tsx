@@ -9,14 +9,16 @@ interface GalleryItem {
   image_url: string;
 }
 
-const FALLBACK_MEDIA: GalleryItem[] = [
-  { id: 1, title: 'Tanıtım Videosu', image_url: '/gallery/video.mp4' },
-  { id: 2, title: 'Klasik Kesim', image_url: '/gallery/1.jpeg' },
-  { id: 3, title: 'Sakal Tıraşı', image_url: '/gallery/2.jpeg' },
-  { id: 4, title: 'Modern Fade Kesim', image_url: '/gallery/3.jpeg' },
-  { id: 5, title: 'Stil & Bakım', image_url: '/gallery/4.jpeg' },
-  { id: 6, title: 'Detay Kesim', image_url: '/gallery/5.jpeg' },
-];
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+
+const FALLBACK_MEDIA: GalleryItem[] = supabaseUrl ? [
+  { id: 1, title: 'Tanıtım Videosu', image_url: `${supabaseUrl}/storage/v1/object/public/gallery/migrated_video.mp4` },
+  { id: 2, title: 'Klasik Kesim', image_url: `${supabaseUrl}/storage/v1/object/public/gallery/migrated_1.jpeg` },
+  { id: 3, title: 'Sakal Tıraşı', image_url: `${supabaseUrl}/storage/v1/object/public/gallery/migrated_2.jpeg` },
+  { id: 4, title: 'Modern Fade Kesim', image_url: `${supabaseUrl}/storage/v1/object/public/gallery/migrated_3.jpeg` },
+  { id: 5, title: 'Stil & Bakım', image_url: `${supabaseUrl}/storage/v1/object/public/gallery/migrated_4.jpeg` },
+  { id: 6, title: 'Detay Kesim', image_url: `${supabaseUrl}/storage/v1/object/public/gallery/migrated_5.jpeg` },
+] : [];
 
 const isVideoUrl = (url: string) => {
   if (!url) return false;
