@@ -254,6 +254,18 @@ export default function AdminPage() {
             Hizmet isimlerini ve fiyatlarını güncelleyin, yeni hizmet ekleyin veya kaldırın.
           </p>
         </Link>
+
+        <Link
+          href="/admin/galeri"
+          className="block p-6 bg-[#0a0a0a] border border-gray-800 hover:border-yellow-500/50 rounded-sm transition-all group"
+        >
+          <h3 className="text-lg font-bold text-white mb-2 group-hover:text-yellow-500 transition-colors">
+            🖼️ Galeri Yönetimi
+          </h3>
+          <p className="text-sm text-gray-500">
+            Müşteri galerisindeki fotoğrafları ve videoları yönetin, yeni saç modelleri yükleyin veya silin.
+          </p>
+        </Link>
       </div>
 
       {/* Bekleyen İstekler Modal */}

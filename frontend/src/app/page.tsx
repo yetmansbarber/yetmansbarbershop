@@ -51,10 +51,16 @@ export default async function Home() {
                  <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
                </Link>
              </div>
-             <div className="relative h-[400px]">
-               <Image src="/gallery/1.jpeg" alt="Barber Details" fill className="object-cover object-[center_65%] rounded-sm border border-gold-500/20" />
-               <div className="absolute -inset-4 border border-gold-500/30 rounded-sm -z-10 translate-x-4 translate-y-4"></div>
-             </div>
+              <div className="relative h-[400px]">
+                <Image 
+                  src="/gallery/1.jpeg" 
+                  alt="Barber Details" 
+                  fill 
+                  unoptimized
+                  className="object-cover object-[center_65%] rounded-sm border border-gold-500/20" 
+                />
+                <div className="absolute -inset-4 border border-gold-500/30 rounded-sm -z-10 translate-x-4 translate-y-4"></div>
+              </div>
            </div>
         </div>
       </section>
