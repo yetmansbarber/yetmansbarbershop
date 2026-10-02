@@ -359,6 +359,7 @@ export default function MesaiPage() {
           )}
         </div>
         </div>
+        </div>
       )}
     </div>
   );
