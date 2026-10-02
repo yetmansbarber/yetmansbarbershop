@@ -14,7 +14,6 @@ const DAYS = [
   { id: 4, name: "Perşembe" },
   { id: 5, name: "Cuma" },
   { id: 6, name: "Cumartesi" },
-  { id: 0, name: "Pazar" }, // Pazar 0
 ];
 
 const ALL_SLOTS = [
