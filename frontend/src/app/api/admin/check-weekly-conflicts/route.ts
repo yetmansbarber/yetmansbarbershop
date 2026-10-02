@@ -21,14 +21,16 @@ export async function GET(request: Request) {
       .from('appointments')
       .select('id, date, time, first_name, last_name, status')
       .gte('date', todayStr)
-      .in('status', ['pending', 'confirmed'])
-      .like('time', `${slot_time}%`); // e.g. "13:00:00"
+      .in('status', ['pending', 'confirmed']);
 
     if (error) throw error;
 
-    // Bu randevuların haftanın o gününe denk gelip gelmediğine bak
-    // supabase veritabanında date YYYY-MM-DD string formatında geliyor.
+    // Bu randevuların haftanın o gününe ve saatine denk gelip gelmediğine bak
     const conflicts = (futureAppointments || []).filter((appt: any) => {
+      // 1. Saat eşleşiyor mu? (veritabanından 10:30 veya 10:30:00 gelebilir)
+      if (appt.time.substring(0, 5) !== slot_time.substring(0, 5)) return false;
+
+      // 2. Gün eşleşiyor mu?
       const [year, month, day] = appt.date.split('-').map(Number);
       const apptDateObj = new Date(year, month - 1, day);
       return apptDateObj.getDay() === dayNum;

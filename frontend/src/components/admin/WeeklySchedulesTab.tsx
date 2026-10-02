@@ -60,14 +60,13 @@ export default function WeeklySchedulesTab() {
         if (checkRes.ok) {
           const checkData = await checkRes.json();
           if (checkData.conflict_count > 0) {
-            const confirmMsg = `DİKKAT! Gelecek haftalarda bu güne ve saate denk gelen ${checkData.conflict_count} adet randevu var:\n\n` +
+            const alertMsg = `❌ İŞLEM REDDEDİLDİ!\n\nGelecek haftalarda bu güne ve saate denk gelen ${checkData.conflict_count} adet onaylı veya bekleyen randevu bulunuyor:\n\n` +
               checkData.conflicts.map((c: any) => `- ${c.date} ${c.time.substring(0, 5)}: ${c.name}`).join("\n") +
-              `\n\nEğer bu saati kalıcı kapatırsanız, bu müşterileri arayıp randevuyu manuel iptal etmeniz gerekir. Yine de kapatmak istiyor musunuz?`;
+              `\n\nBu saati kalıcı olarak kapatabilmeniz için, öncelikle Günlük Panel'den yukarıdaki randevuları bulup iptal etmeniz gerekmektedir. İptal işlemi tamamlanmadan bu saat kalıcı olarak kapatılamaz!`;
               
-            if (!window.confirm(confirmMsg)) {
-              setProcessingSlot(null);
-              return;
-            }
+            window.alert(alertMsg);
+            setProcessingSlot(null);
+            return;
           }
         }
 
