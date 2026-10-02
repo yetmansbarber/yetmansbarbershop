@@ -17,6 +17,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Yetmans Barbershop - Lüks Berber Deneyimi",
   description: "Modern, lüks ve maskülen bir saç & sakal kesim deneyimi için Yetmans Barbershop. Hemen randevu alın.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Yetman's",
+  },
 };
 
 export default function RootLayout({

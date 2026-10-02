@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import PendingModal from "@/components/PendingModal";
+import PushNotificationManager from "@/components/PushNotificationManager";
 
 interface Stats {
   totalRevenue: number;
@@ -107,6 +108,9 @@ export default function AdminPage() {
           </button>
         </div>
       </div>
+
+      {/* Randevu Bildirim Yöneticisi */}
+      <PushNotificationManager />
 
       {/* İstatistikler */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">

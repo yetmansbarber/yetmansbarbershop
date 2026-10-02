@@ -7,8 +7,7 @@ const DEFAULT_START_M = 0;
 const DEFAULT_END_H = 20;
 const DEFAULT_END_M = 30;
 
-// Otomatik mola saatleri (sadece hafta içi)
-const OTO_MOLALAR = ['10:00', '11:30', '12:30', '14:30', '16:30', '18:30'];
+// Otomatik molalar artık veritabanındaki weekly_closed_slots tablosundan yönetilecek
 
 /** Dakika cinsinden saat hesapla */
 function toMinutes(h: number, m: number) {
@@ -93,6 +92,14 @@ export async function GET(request: Request) {
     : DEFAULT_END_M;
 
   const slots = generateSlots(startH, startM, endH, endM);
+  
+  // ── 1.5 Haftalık Kalıcı Kapalı Saatleri Çek ─────────────────
+  const { data: weeklyClosedData } = await supabase
+    .from('weekly_closed_slots')
+    .select('slot_time')
+    .eq('day_of_week', dayOfWeek);
+
+  const weeklyClosedSlots = (weeklyClosedData ?? []).map((row: any) => row.slot_time.substring(0, 5));
 
   // ── 2. Veritabanından randevuları çek ──────────────────────
   let dbQuery = supabase
@@ -132,8 +139,8 @@ export async function GET(request: Request) {
     // Gerçek randevu veya manuel mola varsa kapalı
     if (bookedTimes.includes(slot)) return false;
 
-    // Hafta içi otomatik mola (sadece custom schedule yoksa)
-    if (!customSchedule && isWeekday && OTO_MOLALAR.includes(slot)) {
+    // Haftalık kalıcı kapalı saat ise (custom schedule yoksa geçerli olsun)
+    if (!customSchedule && weeklyClosedSlots.includes(slot)) {
       if (!unblockedTimes.includes(slot)) return false;
     }
 

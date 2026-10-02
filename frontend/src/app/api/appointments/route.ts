@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/utils/supabase';
+import { sendPushToAdmins } from '@/utils/webPush';
 
 export async function POST(request: Request) {
   try {
@@ -47,6 +48,16 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: error.message }, { status: 400 });
     }
     
+    // Arka planda berberin telefonuna bildirim gönder (asenkron / non-blocking)
+    // Hata verse dahi müşterinin randevu alma sürecini kesinlikle etkilemez
+    sendPushToAdmins({
+      title: '💈 Yeni Randevu Talebi!',
+      body: `${first_name} ${last_name} — ${date} saat ${String(time).substring(0, 5)}`,
+      url: '/admin',
+    }).catch((pushErr) => {
+      console.error('Randevu push bildirimi gönderilemedi (müşteri etkilenmedi):', pushErr);
+    });
+
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (err: any) {
     console.error('API route catch error:', err);

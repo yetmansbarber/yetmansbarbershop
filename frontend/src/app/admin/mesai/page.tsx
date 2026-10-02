@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import WeeklySchedulesTab from "@/components/admin/WeeklySchedulesTab";
 
 interface CustomSchedule {
   id: number;
@@ -34,6 +35,7 @@ export default function MesaiPage() {
   const supabase = createClient();
   const router = useRouter();
 
+  const [activeTab, setActiveTab] = useState<"custom" | "weekly">("custom");
   const [schedules, setSchedules] = useState<CustomSchedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -142,12 +144,32 @@ export default function MesaiPage() {
         </Link>
       </div>
 
-      {/* Standart Mesai Bilgisi */}
-      <div className="bg-blue-950/20 border border-blue-500/20 rounded-sm p-4 mb-8 text-sm text-blue-300">
-        <p className="font-bold uppercase tracking-wider text-blue-400 mb-1">Standart Mesai</p>
-        <p>Pazartesi – Cumartesi: <strong className="text-white">10:00 – 20:30</strong></p>
-        <p>Pazar: <strong className="text-red-400">Kapalı</strong> (özelleştirme yapılabilir)</p>
+      {/* Tabs */}
+      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mb-8 border-b border-gray-800">
+        <button 
+          onClick={() => setActiveTab('custom')}
+          className={`py-3 px-6 font-bold text-sm tracking-widest uppercase transition-colors border-b-2 ${activeTab === 'custom' ? 'border-yellow-500 text-yellow-500' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+        >
+          Özel Günler
+        </button>
+        <button 
+           onClick={() => setActiveTab('weekly')}
+           className={`py-3 px-6 font-bold text-sm tracking-widest uppercase transition-colors border-b-2 ${activeTab === 'weekly' ? 'border-yellow-500 text-yellow-500' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+        >
+          Haftalık Kalıcı Saatler
+        </button>
       </div>
+
+      {activeTab === "weekly" ? (
+        <WeeklySchedulesTab />
+      ) : (
+        <div className="space-y-8">
+          {/* Standart Mesai Bilgisi */}
+          <div className="bg-blue-950/20 border border-blue-500/20 rounded-sm p-4 text-sm text-blue-300">
+            <p className="font-bold uppercase tracking-wider text-blue-400 mb-1">Standart Mesai</p>
+            <p>Pazartesi – Cumartesi: <strong className="text-white">10:00 – 20:30</strong></p>
+            <p>Pazar: <strong className="text-red-400">Kapalı</strong> (özelleştirme yapılabilir)</p>
+          </div>
 
       <div className="grid md:grid-cols-2 gap-8">
         {/* Özelleştirme Formu */}
@@ -336,7 +358,8 @@ export default function MesaiPage() {
             </div>
           )}
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
