@@ -26,13 +26,12 @@ interface StaffSelf {
 // ── Sabitler ────────────────────────────────────────────────
 const DEFAULT_START = 10;
 const DEFAULT_END = 20;
-const OTO_MOLALAR = ['10:00', '11:30', '12:30', '14:30', '16:30', '18:30'];
 
 const generateSlotsForDay = (dateStr: string, schedule: any) => {
   const isSunday = new Date(`${dateStr}T12:00:00`).getDay() === 0;
   
-  if (schedule && schedule.is_closed) return { isClosed: true, slots: [] };
-  if (!schedule && isSunday) return { isClosed: true, slots: [] };
+  if (schedule && schedule.is_closed) return { isClosed: true, slots: [], hasCustomSchedule: true };
+  if (!schedule && isSunday) return { isClosed: true, slots: [], hasCustomSchedule: false };
 
   let startStr = schedule?.start_time ? schedule.start_time.substring(0, 5) : '10:00';
   let endStr = schedule?.end_time ? schedule.end_time.substring(0, 5) : '20:30';
@@ -56,7 +55,7 @@ const generateSlotsForDay = (dateStr: string, schedule: any) => {
     slots.push(`${String(h).padStart(2, '0')}:${String(mins).padStart(2, '0')}`);
   }
 
-  return { isClosed: false, slots: [...new Set(slots)] };
+  return { isClosed: false, slots: [...new Set(slots)], hasCustomSchedule: !!schedule };
 };
 
 const getLocalISODate = (date: Date) => {
@@ -76,7 +75,8 @@ export default function PanelPage() {
   const [staffSelf, setStaffSelf] = useState<StaffSelf | null | undefined>(undefined);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const [daySchedule, setDaySchedule] = useState<{ isClosed: boolean, slots: string[] }>({ isClosed: false, slots: [] });
+  const [daySchedule, setDaySchedule] = useState<{ isClosed: boolean, slots: string[], hasCustomSchedule: boolean }>({ isClosed: false, slots: [], hasCustomSchedule: false });
+  const [weeklyClosedSlots, setWeeklyClosedSlots] = useState<{day_of_week: number, slot_time: string}[]>([]);
   const [scheduleLoading, setScheduleLoading] = useState(true);
 
   // ── Auth + Staff Kaydı Kontrolü ─────────────────────────
@@ -116,6 +116,10 @@ export default function PanelPage() {
       // 1. Randevuları çek
       const res = await fetch(`/api/admin/appointments?t=${Date.now()}`, { cache: 'no-store' });
       if (res.ok) setAppointments(await res.json());
+
+      // 1.5 Haftalık Kapalı Saatleri Çek
+      const resWeekly = await fetch('/api/admin/weekly-schedules', { cache: 'no-store' });
+      if (resWeekly.ok) setWeeklyClosedSlots(await resWeekly.json());
 
       // 2. O günün mesai programını çek
       const { data: scheduleData } = await supabase
@@ -381,7 +385,10 @@ export default function PanelPage() {
             const isManualMola = markerAppt?.first_name === '🔴 MOLA';
             let isOtoMola = false;
 
-            if (!activeAppt && !markerAppt && isWeekday && OTO_MOLALAR.includes(time)) {
+            // Haftalık kalıcı kapalı saatleri kontrol et
+            const isWeeklyClosed = weeklyClosedSlots.some(s => s.day_of_week === dayOfWeek && s.slot_time.substring(0, 5) === time);
+
+            if (!activeAppt && !markerAppt && !daySchedule.hasCustomSchedule && isWeeklyClosed) {
               isOtoMola = true;
             }
 
