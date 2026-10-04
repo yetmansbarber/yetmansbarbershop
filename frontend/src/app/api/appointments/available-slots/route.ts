@@ -1,46 +1,34 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/utils/supabase-admin';
 
-// Standart mesai sabitleri
-const DEFAULT_START_H = 10;
-const DEFAULT_START_M = 0;
-const DEFAULT_END_H = 20;
-const DEFAULT_END_M = 30;
-
-// Otomatik molalar artık veritabanındaki weekly_closed_slots tablosundan yönetilecek
+// Sabit Yasal Slotlar (Öğle Molası yutulmuş hali)
+const LEGAL_SLOTS = [
+  "09:00", "09:45", "10:30", "11:15", "12:00", "12:45",
+  "14:30", "15:15", "16:00", "16:45", "17:30", "18:15",
+  "19:00", "19:45", "20:30", "21:15"
+];
 
 /** Dakika cinsinden saat hesapla */
-function toMinutes(h: number, m: number) {
+function toMinutes(timeStr: string) {
+  const [h, m] = timeStr.split(':').map(Number);
   return h * 60 + m;
 }
 
-/**
- * Belirtilen mesai aralığında 30 dakikalık slot listesi üretir.
- * Gece mesaisi desteği: bitiş saati başlangıçtan küçükse ertesi güne sarıyor
- * demektir — bunu da "toplam dakika" mantığıyla çözüyoruz.
- */
-function generateSlots(startH: number, startM: number, endH: number, endM: number): string[] {
-  const slots: string[] = [];
-  let current = toMinutes(startH, startM);
-  // Bitiş toplam dakikası (gece mesaisinde 30 saat gibi davranır)
-  let end = toMinutes(endH, endM);
+function generateSlots(startStr: string, endStr: string): string[] {
+  let startMins = toMinutes(startStr);
+  let endMins = toMinutes(endStr);
 
-  // Gece mesaisi: end < start → end'i +24 saat olarak kabul et
-  if (end <= current) {
-    end += 24 * 60;
+  if (endMins < startMins) {
+    endMins += 24 * 60; // gece mesaisi
   }
 
-  // Son slot END'e eşit olmamalı (son randevu END'e 30 dk önce alınabilir mantığı)
-  // Aslında "son randevuyu saat 20:30'da alabilmeli" demek: slot 20:30 dahil
-  // Dolayısıyla current <= end olduğu sürece ekle
-  while (current <= end) {
-    const h = Math.floor(current / 60) % 24;
-    const m = current % 60;
-    slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
-    current += 30;
-  }
-
-  return slots;
+  return LEGAL_SLOTS.filter(slot => {
+    let slotMins = toMinutes(slot);
+    if (slotMins < startMins && endMins > 24 * 60) {
+      slotMins += 24 * 60;
+    }
+    return slotMins >= startMins && slotMins <= endMins;
+  });
 }
 
 export async function GET(request: Request) {
@@ -78,20 +66,10 @@ export async function GET(request: Request) {
   }
 
   // Mesai saatlerini belirle
-  let startH = customSchedule?.start_time
-    ? parseInt(customSchedule.start_time.split(':')[0])
-    : DEFAULT_START_H;
-  let startM = customSchedule?.start_time
-    ? parseInt(customSchedule.start_time.split(':')[1])
-    : DEFAULT_START_M;
-  let endH = customSchedule?.end_time
-    ? parseInt(customSchedule.end_time.split(':')[0])
-    : DEFAULT_END_H;
-  let endM = customSchedule?.end_time
-    ? parseInt(customSchedule.end_time.split(':')[1])
-    : DEFAULT_END_M;
+  let startStr = customSchedule?.start_time ? customSchedule.start_time.substring(0, 5) : '09:00';
+  let endStr = customSchedule?.end_time ? customSchedule.end_time.substring(0, 5) : '21:15';
 
-  const slots = generateSlots(startH, startM, endH, endM);
+  const slots = generateSlots(startStr, endStr);
   
   // ── 1.5 Haftalık Kalıcı Kapalı Saatleri Çek ─────────────────
   const { data: weeklyClosedData } = await supabase

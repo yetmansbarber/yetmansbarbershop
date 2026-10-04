@@ -24,8 +24,11 @@ interface StaffSelf {
 }
 
 // ── Sabitler ────────────────────────────────────────────────
-const DEFAULT_START = 10;
-const DEFAULT_END = 20;
+const LEGAL_SLOTS = [
+  "09:00", "09:45", "10:30", "11:15", "12:00", "12:45",
+  "14:30", "15:15", "16:00", "16:45", "17:30", "18:15",
+  "19:00", "19:45", "20:30", "21:15"
+];
 
 const generateSlotsForDay = (dateStr: string, schedule: any) => {
   const isSunday = new Date(`${dateStr}T12:00:00`).getDay() === 0;
@@ -33,8 +36,10 @@ const generateSlotsForDay = (dateStr: string, schedule: any) => {
   if (schedule && schedule.is_closed) return { isClosed: true, slots: [], hasCustomSchedule: true };
   if (!schedule && isSunday) return { isClosed: true, slots: [], hasCustomSchedule: false };
 
-  let startStr = schedule?.start_time ? schedule.start_time.substring(0, 5) : '10:00';
-  let endStr = schedule?.end_time ? schedule.end_time.substring(0, 5) : '20:30';
+  // Custom schedule yoksa 09:00 - 21:15 (tümü) geçerlidir.
+  // Custom schedule varsa sadece o aralıktaki yasal slotları döndürür.
+  let startStr = schedule?.start_time ? schedule.start_time.substring(0, 5) : '09:00';
+  let endStr = schedule?.end_time ? schedule.end_time.substring(0, 5) : '21:15';
 
   const parseMins = (time: string) => {
     const [h, m] = time.split(':').map(Number);
@@ -48,12 +53,14 @@ const generateSlotsForDay = (dateStr: string, schedule: any) => {
     endMins += 24 * 60; // Ertesi güne sarkıyor (gece mesaisi)
   }
 
-  const slots = [];
-  for (let m = startMins; m <= endMins; m += 30) {
-    const h = Math.floor(m / 60) % 24;
-    const mins = m % 60;
-    slots.push(`${String(h).padStart(2, '0')}:${String(mins).padStart(2, '0')}`);
-  }
+  const slots = LEGAL_SLOTS.filter(slot => {
+    let slotMins = parseMins(slot);
+    // Gece mesaisine sarkmış bir saatse (örneğin 01:00) 24 saat ekleyerek karşılaştır
+    if (slotMins < startMins && endMins > 24 * 60) {
+      slotMins += 24 * 60;
+    }
+    return slotMins >= startMins && slotMins <= endMins;
+  });
 
   return { isClosed: false, slots: [...new Set(slots)], hasCustomSchedule: !!schedule };
 };

@@ -31,6 +31,12 @@ const formatDateTR = (dateStr: string) => {
   });
 };
 
+const LEGAL_SLOTS = [
+  "09:00", "09:45", "10:30", "11:15", "12:00", "12:45",
+  "14:30", "15:15", "16:00", "16:45", "17:30", "18:15",
+  "19:00", "19:45", "20:30", "21:15"
+];
+
 export default function MesaiPage() {
   const supabase = createClient();
   const router = useRouter();
@@ -43,8 +49,8 @@ export default function MesaiPage() {
   // Form state
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [isClosed, setIsClosed] = useState(false);
-  const [startTime, setStartTime] = useState("10:00");
-  const [endTime, setEndTime] = useState("20:30");
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("21:15");
   const [note, setNote] = useState("");
   const [formMsg, setFormMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -225,25 +231,29 @@ export default function MesaiPage() {
                   <label className="block text-gray-400 mb-2 text-xs uppercase tracking-wide">
                     Başlangıç
                   </label>
-                  <input
-                    type="time"
+                  <select
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    step="1800"
-                    className="w-full bg-[#111] border border-gray-700 text-white p-3 rounded-sm focus:border-yellow-500 focus:outline-none text-sm"
-                  />
+                    className="w-full bg-[#111] border border-gray-700 text-white p-3 rounded-sm focus:border-yellow-500 focus:outline-none text-sm appearance-none"
+                  >
+                    {LEGAL_SLOTS.map(slot => (
+                      <option key={slot} value={slot}>{slot}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-gray-400 mb-2 text-xs uppercase tracking-wide">
                     Bitiş (son randevu)
                   </label>
-                  <input
-                    type="time"
+                  <select
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    step="1800"
-                    className="w-full bg-[#111] border border-gray-700 text-white p-3 rounded-sm focus:border-yellow-500 focus:outline-none text-sm"
-                  />
+                    className="w-full bg-[#111] border border-gray-700 text-white p-3 rounded-sm focus:border-yellow-500 focus:outline-none text-sm appearance-none"
+                  >
+                    {LEGAL_SLOTS.map(slot => (
+                      <option key={slot} value={slot}>{slot}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}
