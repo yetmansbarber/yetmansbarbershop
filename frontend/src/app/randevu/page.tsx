@@ -16,6 +16,26 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export default function Randevu() {
+  const MAINTENANCE_MODE = true; // BAŞLANGIÇTA BAKIM MODU
+
+  if (MAINTENANCE_MODE) {
+    return (
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 text-center">
+        <h1 className="text-4xl md:text-5xl font-bold text-yellow-500 mb-6 tracking-widest uppercase">YETMAN'S</h1>
+        <div className="bg-[#0a0a0a] border border-yellow-500/30 p-8 rounded-sm max-w-lg shadow-2xl">
+          <div className="text-6xl mb-6">🛠️</div>
+          <h2 className="text-2xl font-bold mb-4 uppercase tracking-wider text-white">Sistem Bakımda</h2>
+          <p className="text-gray-400 mb-6 leading-relaxed">
+            Sizlere daha iyi hizmet verebilmek için randevu sistemimizi güncelliyoruz. Sistemimiz bugün saat <strong className="text-yellow-500">20:00</strong>'da yeni randevu alımlarına açılacaktır. Anlayışınız için teşekkür ederiz.
+          </p>
+          <Link href="/" className="inline-block px-8 py-3 bg-yellow-500 text-black font-bold uppercase tracking-widest text-sm hover:bg-yellow-400 transition-colors rounded-sm">
+            Ana Sayfaya Dön
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const [step, setStep] = useState(1);
   const [services, setServices] = useState([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);
