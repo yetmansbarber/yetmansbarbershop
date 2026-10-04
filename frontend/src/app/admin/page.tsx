@@ -15,6 +15,55 @@ interface Stats {
   allTime?: boolean;
 }
 
+function MaintenanceToggle() {
+  const supabase = createClient();
+  const [isMaintenance, setIsMaintenance] = useState<boolean>(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.from('site_settings').select('is_maintenance').eq('id', 1).single()
+      .then(({ data }) => {
+        setIsMaintenance(data?.is_maintenance ?? false);
+        setLoading(false);
+      });
+  }, []);
+
+  const toggle = async () => {
+    setLoading(true);
+    const newVal = !isMaintenance;
+    await supabase.from('site_settings').upsert({ id: 1, is_maintenance: newVal });
+    setIsMaintenance(newVal);
+    setLoading(false);
+  };
+
+  return (
+    <div className="bg-[#0a0a0a] border border-gray-800 p-6 rounded-sm flex flex-col justify-between">
+      <div>
+        <h3 className="text-lg font-bold text-white mb-2">🛠️ Bakım Modu</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Sistemi yeni randevu alımlarına kapatır. Mevcut randevular ve berber paneli çalışmaya devam eder.
+        </p>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className={`text-sm font-bold uppercase tracking-widest ${isMaintenance ? 'text-red-500' : 'text-green-500'}`}>
+          {isMaintenance ? 'Aktif (Müşteriye Kapalı)' : 'Kapalı (Sistem Açık)'}
+        </span>
+        <button
+          onClick={toggle}
+          disabled={loading}
+          className={`px-4 py-2 rounded-sm text-xs font-bold uppercase tracking-widest transition-colors ${
+            isMaintenance 
+              ? 'bg-gray-800 text-white hover:bg-gray-700' 
+              : 'bg-red-900/30 text-red-500 border border-red-900/50 hover:bg-red-900/50'
+          }`}
+        >
+          {loading ? '...' : isMaintenance ? 'Bakımı Bitir' : 'Bakıma Al'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const supabase = createClient();
   const router = useRouter();
@@ -270,6 +319,14 @@ export default function AdminPage() {
             Müşteri galerisindeki fotoğrafları ve videoları yönetin, yeni saç modelleri yükleyin veya silin.
           </p>
         </Link>
+      </div>
+
+      {/* Sistem Ayarları */}
+      <h2 className="text-xl font-bold text-white mb-6 mt-12 uppercase tracking-wider border-t border-gray-800 pt-8">
+        Sistem Ayarları
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <MaintenanceToggle />
       </div>
 
       {/* Bekleyen İstekler Modal */}

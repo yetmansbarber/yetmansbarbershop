@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { createClient } from "@/utils/supabase/client";
 
 interface StaffMember {
   id: number;
@@ -16,9 +17,17 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export default function Randevu() {
-  const MAINTENANCE_MODE = false; // BAKIM MODU KAPALI
+  const supabase = createClient();
+  const [maintenanceMode, setMaintenanceMode] = useState<boolean | null>(null);
 
-  if (MAINTENANCE_MODE) {
+  useEffect(() => {
+    supabase.from('site_settings').select('is_maintenance').eq('id', 1).single()
+      .then(({ data }) => setMaintenanceMode(data?.is_maintenance ?? false));
+  }, []);
+
+  if (maintenanceMode === null) return <div className="min-h-screen bg-black" />; // Yükleniyor...
+
+  if (maintenanceMode) {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 text-center">
         <h1 className="text-4xl md:text-5xl font-bold text-yellow-500 mb-6 tracking-widest uppercase">YETMAN'S</h1>
@@ -26,7 +35,7 @@ export default function Randevu() {
           <div className="text-6xl mb-6">🛠️</div>
           <h2 className="text-2xl font-bold mb-4 uppercase tracking-wider text-white">Sistem Bakımda</h2>
           <p className="text-gray-400 mb-6 leading-relaxed">
-            Sizlere daha iyi hizmet verebilmek için randevu sistemimizi güncelliyoruz. Sistemimiz bugün saat <strong className="text-yellow-500">20:00</strong>'da yeni randevu alımlarına açılacaktır. Anlayışınız için teşekkür ederiz.
+            Sizlere daha iyi hizmet verebilmek için randevu sistemimizi güncelliyoruz. Lütfen daha sonra tekrar deneyin veya bizimle iletişime geçin.
           </p>
           <Link href="/" className="inline-block px-8 py-3 bg-yellow-500 text-black font-bold uppercase tracking-widest text-sm hover:bg-yellow-400 transition-colors rounded-sm">
             Ana Sayfaya Dön
