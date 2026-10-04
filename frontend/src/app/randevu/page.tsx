@@ -16,7 +16,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export default function Randevu() {
-  const MAINTENANCE_MODE = true; // BAŞLANGIÇTA BAKIM MODU
+  const MAINTENANCE_MODE = false; // BAKIM MODU KAPALI
 
   if (MAINTENANCE_MODE) {
     return (
