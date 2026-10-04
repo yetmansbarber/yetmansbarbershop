@@ -34,7 +34,9 @@ const formatDateTR = (dateStr: string) => {
 const LEGAL_SLOTS = [
   "09:00", "09:45", "10:30", "11:15", "12:00", "12:45",
   "14:30", "15:15", "16:00", "16:45", "17:30", "18:15",
-  "19:00", "19:45", "20:30", "21:15"
+  "19:00", "19:45", "20:30", "21:15", "22:00", "22:45",
+  "23:30", "00:15", "01:00", "01:45", "02:30", "03:15",
+  "04:00", "04:45", "05:30"
 ];
 
 export default function MesaiPage() {
@@ -236,9 +238,14 @@ export default function MesaiPage() {
                     onChange={(e) => setStartTime(e.target.value)}
                     className="w-full bg-[#111] border border-gray-700 text-white p-3 rounded-sm focus:border-yellow-500 focus:outline-none text-sm appearance-none"
                   >
-                    {LEGAL_SLOTS.map(slot => (
-                      <option key={slot} value={slot}>{slot}</option>
-                    ))}
+                    {LEGAL_SLOTS.map(slot => {
+                      const isNight = parseInt(slot.split(':')[0]) < 9;
+                      return (
+                        <option key={slot} value={slot}>
+                          {slot} {isNight ? '(Gece)' : ''}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
                 <div>
@@ -250,9 +257,14 @@ export default function MesaiPage() {
                     onChange={(e) => setEndTime(e.target.value)}
                     className="w-full bg-[#111] border border-gray-700 text-white p-3 rounded-sm focus:border-yellow-500 focus:outline-none text-sm appearance-none"
                   >
-                    {LEGAL_SLOTS.map(slot => (
-                      <option key={slot} value={slot}>{slot}</option>
-                    ))}
+                    {LEGAL_SLOTS.map(slot => {
+                      const isNight = parseInt(slot.split(':')[0]) < 9;
+                      return (
+                        <option key={slot} value={slot}>
+                          {slot} {isNight ? '(Gece)' : ''}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>
