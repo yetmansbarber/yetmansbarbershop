@@ -52,4 +52,4 @@ venv/
 env/
 __pycache__/
 *.pyc
-db.sqlite3
+db.sqlite3vercel-env.txt
