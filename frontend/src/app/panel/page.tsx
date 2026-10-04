@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
 
@@ -404,18 +404,27 @@ export default function PanelPage() {
             const showAsMola = isManualMola || isOtoMola;
 
             return (
-              <div
-                key={time}
-                className={`flex flex-col md:flex-row border-b border-gray-800/50 last:border-0 transition-colors hover:bg-dark-900/50 ${
-                  activeAppt
-                    ? activeAppt.status === 'pending'
-                      ? 'bg-yellow-500/5'
-                      : 'bg-green-500/5'
-                    : showAsMola
-                    ? 'bg-red-900/10'
-                    : ''
-                }`}
-              >
+              <React.Fragment key={time}>
+                {time === '14:30' && (
+                  <div className="bg-[#0a0a0a] py-3 flex items-center justify-center border-b border-gray-800/50">
+                    <div className="w-16 md:w-32 h-px bg-gray-800/50"></div>
+                    <span className="px-4 text-gray-500 font-bold uppercase tracking-widest text-xs flex items-center gap-2">
+                      🍽️ ÖĞLE MOLASI (13:30 - 14:30)
+                    </span>
+                    <div className="flex-1 h-px bg-gray-800/50"></div>
+                  </div>
+                )}
+                <div
+                  className={`flex flex-col md:flex-row border-b border-gray-800/50 last:border-0 transition-colors hover:bg-dark-900/50 ${
+                    activeAppt
+                      ? activeAppt.status === 'pending'
+                        ? 'bg-yellow-500/5'
+                        : 'bg-green-500/5'
+                      : showAsMola
+                      ? 'bg-red-900/10'
+                      : ''
+                  }`}
+                >
                 {/* Saat */}
                 <div className="w-full md:w-32 py-4 px-6 flex items-center justify-center md:justify-start border-b md:border-b-0 md:border-r border-gray-800/50">
                   <span className={`text-lg font-bold tracking-widest ${showAsMola ? 'text-red-500' : activeAppt ? 'text-white' : 'text-gray-600'}`}>
@@ -505,6 +514,7 @@ export default function PanelPage() {
                   )}
                 </div>
               </div>
+              </React.Fragment>
             );
           })}
         </div>
