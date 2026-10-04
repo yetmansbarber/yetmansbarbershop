@@ -20,31 +20,6 @@ export default function Randevu() {
   const supabase = createClient();
   const [maintenanceMode, setMaintenanceMode] = useState<boolean | null>(null);
 
-  useEffect(() => {
-    supabase.from('site_settings').select('is_maintenance').eq('id', 1).single()
-      .then(({ data }) => setMaintenanceMode(data?.is_maintenance ?? false));
-  }, []);
-
-  if (maintenanceMode === null) return <div className="min-h-screen bg-black" />; // Yükleniyor...
-
-  if (maintenanceMode) {
-    return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 text-center">
-        <h1 className="text-4xl md:text-5xl font-bold text-yellow-500 mb-6 tracking-widest uppercase">YETMAN'S</h1>
-        <div className="bg-[#0a0a0a] border border-yellow-500/30 p-8 rounded-sm max-w-lg shadow-2xl">
-          <div className="text-6xl mb-6">🛠️</div>
-          <h2 className="text-2xl font-bold mb-4 uppercase tracking-wider text-white">Sistem Bakımda</h2>
-          <p className="text-gray-400 mb-6 leading-relaxed">
-            Sizlere daha iyi hizmet verebilmek için randevu sistemimizi güncelliyoruz. Lütfen daha sonra tekrar deneyin veya bizimle iletişime geçin.
-          </p>
-          <Link href="/" className="inline-block px-8 py-3 bg-yellow-500 text-black font-bold uppercase tracking-widest text-sm hover:bg-yellow-400 transition-colors rounded-sm">
-            Ana Sayfaya Dön
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   const [step, setStep] = useState(1);
   const [services, setServices] = useState([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -58,6 +33,13 @@ export default function Randevu() {
   const [userInfo, setUserInfo] = useState({ first_name: '', last_name: '', phone: '' });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    supabase.from('site_settings').select('is_maintenance').eq('id', 1).single()
+      .then(({ data }) => setMaintenanceMode(data?.is_maintenance ?? false));
+  }, []);
+
+
   const [isSuccess, setIsSuccess] = useState(false);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [dayIsClosed, setDayIsClosed] = useState(false);
@@ -196,6 +178,26 @@ export default function Randevu() {
 
   // Adım etiketleri — personel seçimi 2. adım olarak eklendi
   const steps = ['Hizmet', 'Personel', 'Tarih & Saat', 'Bilgiler'];
+
+  if (maintenanceMode === null) return <div className="min-h-screen bg-black" />; // Yükleniyor...
+
+  if (maintenanceMode) {
+    return (
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 text-center">
+        <h1 className="text-4xl md:text-5xl font-bold text-yellow-500 mb-6 tracking-widest uppercase">YETMAN'S</h1>
+        <div className="bg-[#0a0a0a] border border-yellow-500/30 p-8 rounded-sm max-w-lg shadow-2xl">
+          <div className="text-6xl mb-6">🛠️</div>
+          <h2 className="text-2xl font-bold mb-4 uppercase tracking-wider text-white">Sistem Bakımda</h2>
+          <p className="text-gray-400 mb-6 leading-relaxed">
+            Sizlere daha iyi hizmet verebilmek için randevu sistemimizi güncelliyoruz. Lütfen daha sonra tekrar deneyin veya bizimle iletişime geçin.
+          </p>
+          <Link href="/" className="inline-block px-8 py-3 bg-yellow-500 text-black font-bold uppercase tracking-widest text-sm hover:bg-yellow-400 transition-colors rounded-sm">
+            Ana Sayfaya Dön
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (isSuccess) {
     return (
